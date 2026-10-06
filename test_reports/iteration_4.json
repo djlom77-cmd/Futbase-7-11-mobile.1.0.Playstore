@@ -1,0 +1,39 @@
+{
+  "summary": "Verified the AuthScreen redesign (login) end-to-end plus backend regression. Backend: 42/42 PASSED via pytest-xdist on /app/backend/tests/test_backend.py + test_theme_defaults.py (auth login/me/forgot/reset, register-coach, register-parent valid+invalid invite, PADRE 403 on PUT /config and other writes, seed, /config, /club/invite, teams/matches/standings/jornada-dates/players CRUD, upload/download, AI scan). Frontend: Expo web preview loads the new login WITHOUT bundler errors; auth-card is visible, futbase-logo renders, fixed brand title 'Futbase 7-11' is shown (no club-name caching), subtitle 'Iniciar sesión', gold 'Entrar' Pressable (auth-submit) works. Full login flow with coach@test.com / test123 succeeds and the main app renders with nav-tab-matches (Partidos/Tabla/Plantilla/Rankings/Míster) tab bar.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "RN style props", "issue": "Console warnings: '\"shadow*\" style props are deprecated. Use \"boxShadow\".' and 'props.pointerEvents is deprecated. Use style.pointerEvents'. Non-blocking but should migrate in affected components (likely tab/header). Reference: console output on initial load."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_backend.py",
+    "/app/backend/tests/test_theme_defaults.py",
+    "/app/backend/tests/test_security.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Optional) Migrate deprecated RN style props: replace 'shadow*' with 'boxShadow' and 'props.pointerEvents' with 'style.pointerEvents' in components that trigger the warnings on root load.",
+    "(Carryover) Return 404 on cross-club PUT /{teams,matches,players}/{id} instead of 200+null; rate-limit /auth/forgot-password BEFORE insert; magic-byte sniff on /api/upload; split server.py into routers."
+  ],
+  "critical_code_review_comments": [
+    "/app/frontend/src/screens/AuthScreen.tsx: brand title is hard-coded to 'Futbase 7-11' (line 74) — no club-name cache leaks into the login header, as required by the problem statement.",
+    "testIDs are in place: futbase-logo, auth-card, auth-email, auth-password, auth-submit, go-coach, go-parent, go-forgot, go-back-login, auth-nombre, auth-club-name, auth-invite-code.",
+    "LinearGradient CTA uses correct gold palette (#F3D778 → #D9A72C → #A9741A); dark card (#343638) and black root (#0A0A0B) match the mockup.",
+    "KeyboardAwareScrollView + SafeAreaInsets correctly handle keyboard on mobile; email input uses autoCapitalize='none' and keyboardType='email-address'."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_4.json (new)",
+    "/app/test_reports/pytest/pytest_results.xml (regenerated)"
+  ],
+  "success_rate": {"backend": "100% (42/42)", "frontend": "100% on tested login flow (bundle loads, UI matches mockup, coach login navigates to tabs)"},
+  "seed_data_creation": "Session-scoped transient coaches/parents created by conftest fixtures (parent_<uuid>@test.com) via register-coach / register-parent. coach@test.com/test123 reused via login. No prod data mutated.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Login redesign verified. Use testIDs: auth-email, auth-password, auth-submit to log in. After login, the tab bar exposes nav-tab-matches. Backend EXPO_PUBLIC_BACKEND_URL=https://futbase-7-11-mobile.preview.emergentagent.com. Full backend suite runs in ~17s with `pytest backend/tests/test_backend.py backend/tests/test_theme_defaults.py -n auto`.",
+  "rca_of_issue": "N/A — all requested flows (login redesign render + e2e coach login, backend coach/parent register-login-invite-config regression) are green."
+}
