@@ -1,0 +1,55 @@
+{
+  "summary": "Backend-only security regression after audit fixes (SEC-002 token versioning, SEC-003 cross-club BOLA hardening, upload MIME validation, CORS allow_credentials=False, JWT_SECRET strong). Added /app/backend/tests/test_security.py with 11 new tests (token_version invalidation after reset-password, cross-club blocks on PUT /teams, PUT /matches, PUT /players, POST /players/{id}/stats, DELETE /teams, list isolation, upload txt/wrong-content-type rejection, valid JPEG upload+download). Full suite: 43/43 PASSED (32 existing + 11 new). Verified via direct Mongo injection of password_reset_tokens (sha256(token) hash + expiry) to simulate the email link flow for SEC-002.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "PUT /api/teams/{id}, PUT /api/matches/{id}, PUT /api/players/{id}, POST /api/players/{id}/stats",
+        "issue": "Cross-club writes now correctly scope by equipo_id in the $set and the find_one, so no data leak/mutation occurs. However, the endpoint still returns HTTP 200 with body `null` instead of 404 when the id belongs to another club. Not a security issue (nothing is modified and no data leaks), but a semantic improvement would be to return 404 to signal 'not found' to the caller."
+      },
+      {
+        "endpoint": "DELETE /api/teams/{id}, DELETE /api/matches/{id}, DELETE /api/players/{id}",
+        "issue": "Already scoped by equipo_id (delete_one with equipo_id filter) and the resource is NOT deleted cross-club (verified). Returns {ok: true} regardless, which is acceptable."
+      },
+      {
+        "endpoint": "POST /api/auth/forgot-password",
+        "issue": "Still inserts the password_reset_requests document BEFORE the per-email rate-limit count, so the throttle fires at 5 total requests in 15 min (effectively ratelimit=5). Carried over from iteration_1; non-blocking."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_backend.py",
+    "/app/backend/tests/test_security.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Optional) Return HTTP 404 (instead of 200 + null body) on PUT/stats attempts whose id is not owned by the caller's equipo_id, for cleaner API semantics. Current behaviour is secure (no data leak, no mutation) but ambiguous for clients.",
+    "(Optional, carryover) Rate-limit /auth/forgot-password BEFORE insert.",
+    "(Optional) Add magic-byte sniff on /api/upload to reject files whose extension matches image/* but whose bytes are not an image."
+  ],
+  "critical_code_review_comments": [
+    "SEC-002 implementation is correct: JWT carries 'tv' (token_version), get_current_user compares against users.token_version, and reset-password does $inc on token_version. Verified end-to-end.",
+    "SEC-003 implementation is correct: write endpoints filter by {id, equipo_id} both for $set and the post-write find_one, so a user from club A cannot read nor mutate club B documents.",
+    "CORS allow_credentials=False is correctly set at line 744.",
+    "JWT_SECRET in /app/backend/.env is a strong 64-char high-entropy value (no placeholder).",
+    "Upload validator at line 430 checks ext ∈ MIME_TYPES AND content_type.startswith('image/'); rejects .txt and mismatched content-type with 400 as required.",
+    "server.py is still 764 lines — above the 700-line guideline. Consider splitting into routers (auth/config/teams/matches/players/uploads/scan)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_security.py (new)",
+    "/app/test_reports/iteration_2.json (new)"
+  ],
+  "success_rate": {"backend": "100% (43/43)", "frontend": "N/A (backend-only run)"},
+  "seed_data_creation": "Transient coaches (coachsec_tv_*, coachsec_oldp_*, coachsec_A_*, coachsec_B_*) and TEST_* teams/matches/players were created during security tests. Direct Mongo inserts into password_reset_tokens with hashlib.sha256(token) hashes were used to simulate the email reset flow (as suggested in the review context note). Documents are consumed/invalidated by the reset-password endpoint during the same test run.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Full backend coverage lives in /app/backend/tests/{test_backend.py,test_security.py}. Use EXPO_PUBLIC_BACKEND_URL=https://futbase-7-11-mobile.preview.emergentagent.com and MONGO_URL=mongodb://localhost:27017 DB_NAME=test_database when running pytest. For SEC-002 we rely on pymongo direct insert of a password_reset_tokens doc with token_hash=sha256(token) because the email dispatch path only logs the link when EMAIL_KEY is a placeholder. Note: cross-club PUT endpoints return 200+null (secure but could be 404).",
+  "rca_of_issue": "N/A — all requested audit fixes verified green."
+}

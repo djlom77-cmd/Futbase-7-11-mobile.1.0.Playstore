@@ -1,0 +1,52 @@
+{
+  "summary": "Backend-only testing for Futbase / Liga Alevín. Built pytest regression suite (/app/backend/tests/) covering all requested features: auth (coach/parent, register-coach, login, me, register-parent 404 on bad code, forgot-password generic response, reset-password 400 on invalid token), /seed (coach only, parent 403), /config GET+PUT (parent 403), /club/invite, teams CRUD + parent 403, matches CRUD + bulk + /standings (points/DG/sort validation) + /jornada-dates GET/PUT, players CRUD + stats increment (accumulation verified), /upload + /files/{path} roundtrip against Emergent object storage, /scan/matches and /scan/teams (Gemini via Emergent LLM key, structure validated), and role enforcement on all write endpoints. 32/32 tests PASS (100%). JUnit XML at /app/test_reports/pytest/pytest_results.xml.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "POST /api/auth/forgot-password",
+        "issue": "Inserts a password_reset_requests document BEFORE the per-email rate-limit check, so the limiter counts its own insert; the throttle fires at 5 total requests in 15 min (effectively ratelimit=5), which is still safe but off-by-one from intent. Also, if email dispatch fails (Resend 4xx/5xx), the token stays valid in DB; non-blocking since response is generic by design."
+      },
+      {
+        "endpoint": "POST /api/upload",
+        "issue": "Does not validate uploaded content-type / size; any extension would be accepted (file.filename rsplit). Not blocking but worth constraining."
+      },
+      {
+        "endpoint": "GET /api/files/{path}",
+        "issue": "Public (no auth). Any user with the path can download the image. Acceptable for crests/avatars but worth noting for private uploads."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_backend.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "No fixes required for the tested surface area. Backend is green on all 14 feature items in the review request.",
+    "(Optional) Consider rate-limiting /auth/forgot-password BEFORE insert, enforce upload content-type/size limits, and gate /api/files/{path} behind auth if private media is expected."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 749 lines — above the 700-line guideline. Consider splitting into routers: auth.py, config.py, teams.py, matches.py, players.py, uploads.py, scan.py, email.py.",
+    "requests library used for storage I/O inside async endpoints is correctly wrapped in run_in_threadpool for upload/download, good.",
+    "Pydantic models expose equipo_id as part of request body (Optional); server overwrites it from the authenticated user — safe but confusing; consider separate Create vs Response schemas.",
+    "scan/matches and scan/teams use Gemini model 'gemini-3.1-pro-preview' — ensure this model id remains valid for emergentintegrations; endpoints currently respond 200 with empty lists when text is unreadable, which is the agreed contract.",
+    "MongoDB _id is correctly excluded via projection {'_id': 0} across endpoints."
+  ],
+  "updated_files": [
+    "/app/backend/tests/conftest.py (new)",
+    "/app/backend/tests/test_backend.py (new)"
+  ],
+  "success_rate": {"backend": "100% (32/32)", "frontend": "N/A (backend-only run)"},
+  "seed_data_creation": "POST /api/seed was called via the suite as the coach, populating teams (8), players (8), matches (jornadas 1-4) and jornada_dates. Also created transient TEST_* teams/players/matches which the suite cleans up (team/match/player CRUD tests delete their own data; bulk-created TEST_Alpha/Beta/Gamma/Delta/H/A teams remain, prefixed TEST_ for easy identification).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend fully covered by /app/backend/tests/test_backend.py. Coach account coach@test.com/test123 is seeded via register-coach if missing. BASE_URL comes from EXPO_PUBLIC_BACKEND_URL in /app/frontend/.env (currently https://futbase-7-11-mobile.preview.emergentagent.com). Image upload and Gemini scan both work end-to-end against Emergent storage and Emergent LLM. For future frontend tests use EXPO_PUBLIC_BACKEND_URL and testID attributes.",
+  "rca_of_issue": "N/A — no bugs reproduced."
+}
