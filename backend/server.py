@@ -102,9 +102,9 @@ DEFAULT_CLUB_CONFIG = {
     "club_name": "Mi Equipo",
     "subtitle": "Liga Educa",
     "my_team": "",
-    "theme_preset": "navy_gold",
+    "theme_preset": "futbase_oro",
     "custom_colors": None,
-    "dark_mode": False,
+    "dark_mode": True,
     "club_crest_path": None,
     "jornada_dates": {},
 }

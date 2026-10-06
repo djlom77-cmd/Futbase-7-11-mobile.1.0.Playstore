@@ -687,9 +687,17 @@ function ThemeManager({ config, reload }: any) {
     toast.success(!dark ? "Modo oscuro activado" : "Modo claro activado");
     reload();
   };
+  const applyDefault = async () => {
+    await api.put("/config", { theme_preset: "futbase_oro", custom_colors: null, dark_mode: true });
+    toast.success("Tema predeterminado (Futbase) aplicado");
+    reload();
+  };
 
   return (
     <Section icon={Palette} title="Colores de la App">
+      <View style={{ marginBottom: 12 }}>
+        <FillBtn testID="default-theme-btn" onPress={applyDefault} icon={Sparkles} label="Usar tema predeterminado (Futbase)" color="#C9A227" />
+      </View>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bg }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           {dark ? <Moon size={18} color={colors.primary} /> : <Sun size={18} color={colors.accent} />}

@@ -10,12 +10,12 @@ import { fileUrl, forgotPassword, resetPassword } from "@/src/api";
 import { DefaultCrest } from "@/src/components/Crest";
 import { useAuth } from "@/src/context/auth";
 import { useToast } from "@/src/context/toast";
-import { BRAND_KEY, STATIC_NAVY } from "@/src/theme";
+import { BRAND_KEY, FUTBASE_DARK } from "@/src/theme";
 import { storage } from "@/src/utils/storage";
 
 type Mode = "login" | "coach" | "parent" | "forgot" | "reset";
 
-const C = STATIC_NAVY;
+const C = FUTBASE_DARK;
 const TITLES: Record<Mode, string> = {
   login: "Iniciar sesión",
   coach: "Crear equipo (Entrenador)",
@@ -82,7 +82,7 @@ export default function AuthScreen() {
             {brand.crest ? (
               <Image source={{ uri: fileUrl(brand.crest)! }} contentFit="contain" style={styles.brandCrest} />
             ) : (
-              <DefaultCrest size={64} />
+              <DefaultCrest size={64} primary={C.accent} accent={C.primaryLight} card="#141414" />
             )}
             <Text style={styles.brand}>{brand.name || "FUTBASE-7-11"}</Text>
             <Text style={styles.sub}>{TITLES[mode]}</Text>
@@ -111,7 +111,7 @@ export default function AuthScreen() {
           )}
 
           <Pressable testID="auth-submit" onPress={submit} disabled={loading} style={({ pressed }) => [styles.submit, pressed && { opacity: 0.85 }]}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Icon size={18} color="#fff" />}
+            {loading ? <ActivityIndicator color="#141414" /> : <Icon size={18} color="#141414" />}
             <Text style={styles.submitText}>{cta}</Text>
           </Pressable>
 
@@ -130,7 +130,7 @@ export default function AuthScreen() {
               </>
             ) : (
               <Pressable testID="go-back-login" onPress={() => { setMode("login"); router.replace("/"); }} style={styles.backRow}>
-                <ArrowLeft size={13} color={C.primary} />
+                <ArrowLeft size={13} color={C.accent} />
                 <Text style={styles.linkStrong}>Volver a iniciar sesión</Text>
               </Pressable>
             )}
@@ -142,22 +142,22 @@ export default function AuthScreen() {
 }
 
 function Field(props: React.ComponentProps<typeof TextInput> & { testID: string }) {
-  return <TextInput {...props} placeholderTextColor="#9AA3AD" style={styles.field} />;
+  return <TextInput {...props} placeholderTextColor="#8A8A8E" style={styles.field} />;
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#2A3844" },
+  root: { flex: 1, backgroundColor: "#0A0A0B" },
   scroll: { flexGrow: 1, justifyContent: "center", paddingHorizontal: 20 },
-  card: { width: "100%", maxWidth: 400, alignSelf: "center", borderRadius: 24, backgroundColor: "#FFFFFF", padding: 24, gap: 12 },
+  card: { width: "100%", maxWidth: 400, alignSelf: "center", borderRadius: 24, backgroundColor: "#161616", padding: 24, gap: 12, borderWidth: 1, borderColor: "#C9A22733" },
   head: { alignItems: "center", marginBottom: 6, gap: 4 },
   brandCrest: { width: 64, height: 64, borderRadius: 12 },
-  brand: { fontSize: 26, fontWeight: "800", color: "#283039", textAlign: "center" },
-  sub: { fontSize: 12, fontWeight: "600", color: "#6B7682" },
-  field: { width: "100%", paddingHorizontal: 14, paddingVertical: 13, borderRadius: 14, borderWidth: 1, borderColor: "#E4E7E4", backgroundColor: "#F4F5F3", color: "#283039", fontSize: 15 },
-  submit: { marginTop: 6, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 15, borderRadius: 14, backgroundColor: "#3A4A5A" },
-  submitText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  brand: { fontSize: 26, fontWeight: "900", color: "#E3C457", textAlign: "center", letterSpacing: 0.5 },
+  sub: { fontSize: 12, fontWeight: "600", color: "#B9A86A" },
+  field: { width: "100%", paddingHorizontal: 14, paddingVertical: 13, borderRadius: 14, borderWidth: 1, borderColor: "#2E2A1C", backgroundColor: "#1E1E20", color: "#F3F0E6", fontSize: 15 },
+  submit: { marginTop: 6, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 15, borderRadius: 14, backgroundColor: "#D4A52B" },
+  submitText: { color: "#141414", fontWeight: "900", fontSize: 15 },
   links: { marginTop: 10, gap: 10, alignItems: "center" },
-  link: { fontSize: 12.5, fontWeight: "600", color: "#6B7682" },
-  linkStrong: { fontSize: 12.5, fontWeight: "700", color: "#3A4A5A", textAlign: "center" },
+  link: { fontSize: 12.5, fontWeight: "600", color: "#9A8E63" },
+  linkStrong: { fontSize: 12.5, fontWeight: "700", color: "#E3C457", textAlign: "center" },
   backRow: { flexDirection: "row", alignItems: "center", gap: 5 },
 });

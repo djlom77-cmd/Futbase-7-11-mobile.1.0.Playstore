@@ -1,0 +1,47 @@
+{
+  "summary": "Backend-only regression for the new DEFAULT_CLUB_CONFIG (theme_preset='futbase_oro', dark_mode=True). Added /app/backend/tests/test_theme_defaults.py with 10 tests covering: fresh coach register-coach -> token+user ENTRENADOR, GET /auth/me 200, GET /config returns theme_preset='futbase_oro' AND dark_mode=True AND custom_colors=null for a brand-new club, GET /club/invite returns a valid invite_code, register-parent with valid code (PADRE + /auth/me 200 + login + PUT /config = 403), register-parent with invalid code = 404, PUT /config theme payload persists via GET for coach, dark_mode toggles both ways, and login regression for coach@test.com/test123. Full suite: 53/53 PASSED (43 previous + 10 new).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/config",
+        "issue": "Default theme_preset='futbase_oro' and dark_mode=True are correctly applied for freshly-registered clubs (via DEFAULT_CLUB_CONFIG spread at register-coach time and get_club setdefault fallback)."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_theme_defaults.py",
+    "/app/backend/tests/test_backend.py",
+    "/app/backend/tests/test_security.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml",
+    "/app/test_reports/pytest/pytest_theme_results.xml"
+  ],
+  "action_items": [
+    "Nothing blocking. Carryover (optional, from iter_2): return 404 on cross-club PUT /{teams,matches,players}/{id} instead of 200+null; rate-limit /auth/forgot-password BEFORE insert; magic-byte sniff on /api/upload; split server.py (764 lines) into routers."
+  ],
+  "critical_code_review_comments": [
+    "DEFAULT_CLUB_CONFIG at /app/backend/server.py:101-110 correctly sets theme_preset='futbase_oro' and dark_mode=True; register-coach spreads it into the new club document (line 304-307) so GET /config returns the new defaults immediately.",
+    "PUT /api/config correctly whitelists {theme_preset, custom_colors, dark_mode, ...} and uses require_coach dependency, so PADRE receives 403 (verified).",
+    "register-parent returns 404 on bad invite_code (line 325) — verified.",
+    "coach@test.com/test123 still logs in (no password/token_version regression after DEFAULT_CLUB_CONFIG change)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_theme_defaults.py (new)",
+    "/app/test_reports/iteration_3.json (new)",
+    "/app/test_reports/pytest/pytest_results.xml (regenerated)",
+    "/app/test_reports/pytest/pytest_theme_results.xml (new)"
+  ],
+  "success_rate": {"backend": "100% (53/53)", "frontend": "N/A (backend-only run)"},
+  "seed_data_creation": "Transient coach_theme_* (ENTRENADOR), parent_theme_* / parent_bad_* (PADRE) accounts and their clubs are created per test session. No modifications to the fixed coach@test.com account. All test data is prefixed and isolated per club.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Theme/default-config coverage lives in /app/backend/tests/test_theme_defaults.py and runs in <3s. New club defaults are: theme_preset='futbase_oro', dark_mode=True, custom_colors=None. GET /config strips invite_code and jornada_dates. Full suite 53/53 green via pytest-xdist (2 workers). Use EXPO_PUBLIC_BACKEND_URL from /app/frontend/.env.",
+  "rca_of_issue": "N/A — all requested flows (new theme defaults, coach+parent register/login with invite code) verified green."
+}

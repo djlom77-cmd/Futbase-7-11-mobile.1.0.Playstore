@@ -82,6 +82,7 @@ export type BrandPalette = {
 };
 
 export const THEME_PRESETS: Record<string, BrandPalette> = {
+  futbase_oro: { name: "Futbase Oro (predeterminado)", primary: "#C9A227", primaryDark: "#15130B", primaryLight: "#E3C457", accent: "#D4A24C", accentHover: "#B9893A" },
   navy_gold: { name: "Azul Marino & Oro", primary: "#1E3A5F", primaryDark: "#142942", primaryLight: "#35557E", accent: "#D4A24C", accentHover: "#B9893A" },
   grafito_coral: { name: "Grafito & Coral", primary: "#3A3F47", primaryDark: "#262A30", primaryLight: "#565C66", accent: "#FF6B5E", accentHover: "#E85546" },
   turquesa_tropical: { name: "Turquesa Tropical", primary: "#0E9898", primaryDark: "#0A6E6E", primaryLight: "#2CB7B7", accent: "#FFB23E", accentHover: "#E89A26" },
@@ -166,6 +167,9 @@ export function computeColors(presetKey?: string | null, custom?: BrandPalette |
 // Static palette used on screens that render outside the provider (Auth, Reset).
 export const STATIC_NAVY = computeColors("navy_gold", null, false);
 
+// The app's default/brand palette (black + gold, "Futbase 7-11").
+export const FUTBASE_DARK = computeColors("futbase_oro", null, true);
+
 // Local-storage key for the cached club branding (name + crest) shown on the
 // login "portada" once a coach has configured their club.
 export const BRAND_KEY = "futbase_brand";
@@ -177,10 +181,10 @@ type AppThemeCtx = {
   setThemeFromConfig: (cfg: ThemeConfig) => void;
 };
 
-const AppThemeContext = createContext<AppThemeCtx>({ colors: STATIC_NAVY, setThemeFromConfig: () => {} });
+const AppThemeContext = createContext<AppThemeCtx>({ colors: FUTBASE_DARK, setThemeFromConfig: () => {} });
 
 export function AppThemeProvider({ children }: { children: React.ReactNode }) {
-  const [colors, setColors] = useState<AppColors>(STATIC_NAVY);
+  const [colors, setColors] = useState<AppColors>(FUTBASE_DARK);
   const setThemeFromConfig = useCallback((cfg: ThemeConfig) => {
     setColors(computeColors(cfg?.theme_preset, cfg?.custom_colors || null, !!cfg?.dark_mode));
   }, []);
