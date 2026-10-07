@@ -61,7 +61,7 @@ export default function SquadScreen({
     >
       <View style={s.titleRow}>
         <Users size={20} color={colors.primary} />
-        <Text style={s.title}>Plantilla Alevín</Text>
+        <Text style={s.title}>Plantilla</Text>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipsRow}>
