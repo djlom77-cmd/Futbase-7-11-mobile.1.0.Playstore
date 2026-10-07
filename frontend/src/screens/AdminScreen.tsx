@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { Image } from "expo-image";
 import {
   AlertTriangle,
+  ArrowLeft,
   Camera,
   ClipboardList,
   Image as ImageIcon,
@@ -30,10 +31,33 @@ import { AppColors, buildCustomTheme, THEME_PRESETS, useAppColors, useAppThemedS
 
 const POSITIONS = ["Portero", "Defensa", "Centrocampista", "Delantero"];
 
+type AdminView = "dashboard" | "club" | "partidos" | "equipos" | "plantilla" | "temas" | "peligro";
+
+const CARDS: { id: AdminView; title: string; img: any; testID: string }[] = [
+  { id: "club", title: "Mi Club", img: require("../../assets/images/admin/card_club.png"), testID: "admin-card-club" },
+  { id: "partidos", title: "Partidos", img: require("../../assets/images/admin/card_partidos.png"), testID: "admin-card-partidos" },
+  { id: "equipos", title: "Equipos y Campos", img: require("../../assets/images/admin/card_equipos.png"), testID: "admin-card-equipos" },
+  { id: "plantilla", title: "Plantilla y Estadísticas", img: require("../../assets/images/admin/card_plantilla.png"), testID: "admin-card-plantilla" },
+  { id: "temas", title: "Temas de App", img: require("../../assets/images/admin/card_temas.png"), testID: "admin-card-temas" },
+  { id: "peligro", title: "Zona de Peligro", img: require("../../assets/images/admin/card_peligro.png"), testID: "admin-card-peligro" },
+];
+
+const DETAIL_TITLES: Record<Exclude<AdminView, "dashboard">, string> = {
+  club: "Mi Club",
+  partidos: "Partidos",
+  equipos: "Equipos y Campos",
+  plantilla: "Plantilla y Estadísticas",
+  temas: "Temas de App",
+  peligro: "Zona de Peligro",
+};
+
 export default function AdminScreen({ config, players, teams, matches, jornadaDates, reload, onLogout }: any) {
   const colors = useAppColors();
   const s = useAppThemedStyles(styles);
   const toast = useToast();
+  const { width } = useWindowDimensions();
+  const [view, setView] = useState<AdminView>("dashboard");
+  const cardWidth = width < 360 ? "100%" : "48.5%";
 
   const seed = async () => {
     try {
@@ -45,11 +69,42 @@ export default function AdminScreen({ config, players, teams, matches, jornadaDa
     }
   };
 
+  if (view !== "dashboard") {
+    return (
+      <ScrollView style={s.flex} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+        <View style={s.detailHead}>
+          <Pressable testID="admin-back-btn" onPress={() => setView("dashboard")} style={[s.backBtn, { borderColor: colors.border }]}>
+            <ArrowLeft size={18} color={colors.text} />
+          </Pressable>
+          <Text style={s.title} numberOfLines={1}>{DETAIL_TITLES[view]}</Text>
+        </View>
+
+        {view === "club" && (
+          <>
+            <ClubManager config={config} teams={teams} reload={reload} />
+            <CrestManager config={config} reload={reload} />
+            <InviteManager />
+          </>
+        )}
+        {view === "partidos" && (
+          <>
+            <ResultsManager reload={reload} jornadaDates={jornadaDates} />
+            <MatchesManager matches={matches} reload={reload} jornadaDates={jornadaDates} />
+          </>
+        )}
+        {view === "equipos" && <TeamsManager teams={teams} reload={reload} />}
+        {view === "plantilla" && <PlayerManager players={players} reload={reload} />}
+        {view === "temas" && <ThemeManager config={config} reload={reload} />}
+        {view === "peligro" && <ResetManager reload={reload} />}
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView style={s.flex} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
       <View style={s.headerRow}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <ShieldCheck size={20} color={colors.primary} />
+          <ShieldCheck size={20} color={colors.accent} />
           <Text style={s.title}>Panel del Entrenador</Text>
         </View>
         <Pressable testID="logout-btn" onPress={onLogout} style={[s.logoutBtn, { borderColor: colors.border }]}>
@@ -57,21 +112,23 @@ export default function AdminScreen({ config, players, teams, matches, jornadaDa
         </Pressable>
       </View>
 
-      <ClubManager config={config} teams={teams} reload={reload} />
-      <InviteManager />
-      <ResultsManager reload={reload} jornadaDates={jornadaDates} />
-      <MatchesManager matches={matches} reload={reload} jornadaDates={jornadaDates} />
-      <TeamsManager teams={teams} reload={reload} />
-      <PlayerManager players={players} reload={reload} />
-      <CrestManager config={config} reload={reload} />
-      <ThemeManager config={config} reload={reload} />
+      <View style={s.grid}>
+        {CARDS.map((c) => (
+          <Pressable
+            key={c.id}
+            testID={c.testID}
+            onPress={() => setView(c.id)}
+            style={({ pressed }) => [s.cardWrap, { width: cardWidth }, pressed && { opacity: 0.9, transform: [{ scale: 0.985 }] }]}
+          >
+            <Image source={c.img} contentFit="cover" style={s.cardImg} accessibilityLabel={c.title} />
+          </Pressable>
+        ))}
+      </View>
 
       <Pressable testID="seed-btn" onPress={seed} style={[s.outlineBtn, { borderColor: colors.border }]}>
         <Sparkles size={15} color={colors.muted} />
         <Text style={{ fontWeight: "700", fontSize: 13.5, color: colors.muted }}>Cargar datos de ejemplo (demo)</Text>
       </Pressable>
-
-      <ResetManager reload={reload} />
     </ScrollView>
   );
 }
@@ -805,8 +862,22 @@ const styles = (c: AppColors) => ({
   flex: { flex: 1 },
   content: { paddingHorizontal: 16, paddingTop: 16, gap: 14, paddingBottom: 24 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  title: { fontSize: 22, fontWeight: "800", color: c.text },
+  title: { fontSize: 22, fontWeight: "800", color: c.text, flexShrink: 1 },
   logoutBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1 },
+  detailHead: { flexDirection: "row", alignItems: "center", gap: 12 },
+  backBtn: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 14 },
+  cardWrap: {
+    borderRadius: 18,
+    overflow: "hidden",
+    backgroundColor: "#0A0A0B",
+    shadowColor: "#000",
+    shadowOpacity: 0.45,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  cardImg: { width: "100%", aspectRatio: 469 / 418 },
   section: { borderRadius: 18, padding: 16, borderWidth: 1, borderColor: c.border, backgroundColor: c.card },
   sectionHead: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
   sectionTitle: { fontSize: 17, fontWeight: "800", color: c.text },

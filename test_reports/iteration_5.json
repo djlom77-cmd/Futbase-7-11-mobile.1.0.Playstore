@@ -1,0 +1,36 @@
+{
+  "summary": "Verified the AdminScreen dashboard reorganization end-to-end on mobile viewport (390x844). Login as coach@test.com/test123 → Míster tab (nav-tab-admin) renders the new dashboard with the 6 image cards (admin-card-club, admin-card-partidos, admin-card-equipos, admin-card-plantilla, admin-card-temas, admin-card-peligro) and the footer seed-btn. Each card navigates to a detail view that preserves ALL existing testIDs and logic: Mi Club (club-name-input, my-team-input, save-club-btn, club-crest-upload, invite-code, share-invite-btn), Partidos (ai-scan-btn, jornada-date-input, save-results-btn), Equipos y Campos (add-team-btn, ai-scan-btn, admin-team-row with save-team-btn+team-crest-upload-btn after seed → 8 teams), Plantilla y Estadísticas (add-player-btn, add-goal-btn, add-assist-btn, add-match-btn, edit-player-btn → 8 players), Temas de App (default-theme-btn, dark-mode-toggle, preset-navy_gold, apply-custom-colors-btn), and Zona de Peligro (open-reset-btn visible but no reset form shown on open — reset-pin-input/reset-confirm-input/confirm-reset-btn only appear AFTER tapping open-reset-btn, and NO POST /club/reset is triggered just by opening the card; teams=8 and players=8 remain intact after opening/closing Peligro). admin-back-btn returns to the dashboard from every detail (6 cards visible again). Backend regression: POST /api/auth/login coach → 200; GET /api/config → 200 with theme_preset='futbase_oro' after resetting to default via default-theme-btn (coach account had been mutated to navy_gold by prior iteration tests, which is independent of this UI-only change).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "RN style props", "issue": "Non-blocking console warnings persist: '\"shadow*\" style props are deprecated. Use \"boxShadow\".' and 'props.pointerEvents is deprecated. Use style.pointerEvents'. Likely triggered by the new cardWrap shadow* styles in AdminScreen styles (lines 870-879) and other screens. Reference: /app/frontend/src/screens/AdminScreen.tsx:874-878"}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_backend.py",
+    "/app/backend/tests/test_theme_defaults.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Optional) Replace deprecated 'shadowColor/shadowOpacity/shadowRadius/shadowOffset' on AdminScreen cardWrap (lines 874-878) with 'boxShadow' to silence RN web warnings.",
+    "(Carryover from prior iterations) Return 404 on cross-club PUT /{teams,matches,players}/{id}; rate-limit /auth/forgot-password BEFORE insert; magic-byte sniff on /api/upload; split server.py into routers."
+  ],
+  "critical_code_review_comments": [
+    "AdminScreen.tsx cleanly separates dashboard vs detail via internal 'view' state (lines 34, 59, 72-101) — no routing or backend changes; managers (ClubManager, CrestManager, InviteManager, ResultsManager, MatchesManager, TeamsManager, PlayerManager, ThemeManager, ResetManager) are reused verbatim.",
+    "ResetManager is correctly guarded: open-reset-btn only toggles local state (setOpen(true)) — the destructive POST /api/club/reset call (line 827) is reachable ONLY from confirm-reset-btn after writing BORRAR + password (lines 825-833). Opening the Peligro card is 100% side-effect-free.",
+    "Responsive grid: cardWidth switches to '100%' when width<360 and '48.5%' otherwise (line 60), matching the spec.",
+    "Deprecated RN shadow props are still used on cardWrap (styles lines 874-878); migrate to boxShadow for RN >=0.76 web."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_5.json (new)"
+  ],
+  "success_rate": {"backend": "100% (login 200, /api/config 200 w/ theme_preset=futbase_oro, teams/players intact)", "frontend": "100% — all 6 cards render, all expected testIDs present inside each detail (incl. admin-match-row/save-match-btn/delete-match-btn implicitly covered because teams=8 and players=8 after seed; MatchesManager list rendered after seed with jornada groups), admin-back-btn returns to dashboard from every view, Zona de Peligro is non-destructive on open."},
+  "seed_data_creation": "Called seed-btn in-UI once (equivalent to POST /api/seed) on coach@test.com's club to ensure teams/players lists render inside detail views. No new users or external data created.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "AdminScreen is now a dashboard of 6 image cards + seed-btn at the foot. Use testID admin-card-<club|partidos|equipos|plantilla|temas|peligro> to open a section; admin-back-btn returns. Internal managers are unchanged; reuse existing testIDs listed above. coach@test.com's config may drift between iterations (dark_mode, theme_preset) — reset via default-theme-btn before preset-dependent assertions. Deprecated 'shadow*' RN warnings remain but are non-blocking.",
+  "rca_of_issue": "N/A — reorganization is purely visual/UI (new 'view' state + 6-card grid), no logic/routes/backend changed, all legacy testIDs preserved, Peligro open is side-effect-free. All requested verifications passed."
+}
