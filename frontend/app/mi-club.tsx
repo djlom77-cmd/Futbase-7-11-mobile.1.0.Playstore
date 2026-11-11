@@ -8,7 +8,7 @@ export default function MiClubScreen() {
     setLoading(true);
     try {
       // Cambia 127.0.0.1 por la IP de tu servidor backend si usas un dispositivo físico
-      const response = await fetch('http://127.0.0.1:5000/api/sync-liga', {
+      const response = await fetch('https://futbase-7-11-mobile-1-0-playstore.onrender.com/api/sync-liga', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
